@@ -2,7 +2,7 @@ import "./App.css";
 import React from "react";
 import COUNTRY_CODES from "./constants";
 
-const DropDown = ({ value, onSelect, filterOut }) => {
+const DropDown = ({ filterOut, onSelect, value }) => {
   return (
     <select value={value} onSelect={onSelect} onChange={onSelect}>
       {COUNTRY_CODES.map(
@@ -18,17 +18,22 @@ const App = () => {
   const [result, setResult] = React.useState("");
   const [langs, setLangs] = React.useState({ source: "en", target: "hi" });
 
+  const translateReq = React.useCallback(async () => {
+    const res = await fetchTranslation(input.current.value, langs);
+    setResult(res);
+  }, [input.current, langs]);
+
   return (
     //Interface
     <div className="App">
       <h1>From</h1>
 
       <DropDown
-        filterOut={langs.target} //Remove the target language code from the dropdown
+        filterOut={langs.target}
         onSelect={(ev) => {
-          setLangs({ ...langs, source: ev.target.value }); //Update the dropdown menu
+          setLangs({ ...langs, source: ev.target.value });
         }}
-        value={langs.source} //Set the initial value
+        value={langs.source}
       />
 
       <input
@@ -42,11 +47,11 @@ const App = () => {
       <h1>To</h1>
 
       <DropDown
-        filterOut={langs.source} //Remove the target language code from the dropdown
+        filterOut={langs.source}
         onSelect={(ev) => {
-          setLangs({ ...langs, source: ev.target.value }); //Update the dropdown menu
+          setLangs({ ...langs, target: ev.target.value });
         }}
-        value={langs.target} //Set the initial value
+        value={langs.target}
       />
 
       <input
@@ -58,16 +63,24 @@ const App = () => {
         value={result}
       />
 
-      <button className="button" onClick={translate}>
+      <button className="button" onClick={translateReq}>
         Translate
       </button>
     </div>
   );
 };
 
-//Methods
-const translate = () => {
-  alert("Clicked");
+//HTTP request
+const fetchTranslation = async (text, langs) => {
+  return (
+    await (
+      await fetch("http://localhost:8000/translate", {
+        method: "POST",
+        body: JSON.stringify({ text, langs }),
+        headers: { "Content-Type": "application/json" }
+      })
+    ).json()
+  ).data;
 };
 
 export default App;
